@@ -1,23 +1,25 @@
 package com.example.demo.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "DANHMUC")
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // Bỏ qua proxy của Hibernate
+
 public class DanhMuc {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Integer id;
+    private String id = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
     @NotBlank(message = "Mã danh mục không được để trống")
     @Size(max = 255, message = "Mã danh mục không được vượt quá 255 ký tự")

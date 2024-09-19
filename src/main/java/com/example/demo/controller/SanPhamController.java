@@ -1,17 +1,26 @@
 package com.example.demo.controller;
 
+import com.example.demo.entities.LoaiSanPham;
 import com.example.demo.entities.SanPham;
+import com.example.demo.entities.ThuongHieu;
+import com.example.demo.repositories.LoaiSanPhamRepository;
 import com.example.demo.repositories.SanPhamRepository;
+import com.example.demo.repositories.ThuongHieuRepository;
+import com.example.demo.request.SanPhamRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("san-pham")
@@ -19,41 +28,88 @@ public class SanPhamController {
 
     @Autowired
     SanPhamRepository sanPhamRepository;
-
+    @Autowired
+    LoaiSanPhamRepository loaiSanPhamRepository;
+    @Autowired
+    ThuongHieuRepository thuongHieuRepository;
     @GetMapping()
     public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(sanPhamRepository.findAll());
+        Sort sort = Sort.by(Sort.Direction.DESC, "ngayTao");
+        List<SanPham> sanPhamList = sanPhamRepository.findAll(sort);
+        return  ResponseEntity.ok(sanPhamList.stream().map(SanPham::toResponse));
     }
-
+    @GetMapping("/phanTrang")
+    public ResponseEntity<?>phanTrang(@RequestParam(name = "page",defaultValue = "0")Integer page){
+        PageRequest pageRequest = PageRequest.of(page, 5, Sort.by(Sort.Direction.DESC, "ngayTao"));
+        return ResponseEntity.ok(sanPhamRepository.findAll(pageRequest));
+    }
+    @GetMapping("/detail")
+    public ResponseEntity<?>detail(@RequestParam(name = "id")String id){
+        Optional<SanPham> existingSanPham = sanPhamRepository.findById(id);
+        if (existingSanPham.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm có id: " + id);
+        }
+        return ResponseEntity.ok(sanPhamRepository.findById(id).stream().map(SanPham::toResponse));
+    }
     @PostMapping("/add")
-    public ResponseEntity<?> add(@Valid @RequestBody SanPham sanPham) {
-        sanPham.setMaSP(sanPham.getMaSP().trim());
-        sanPham.setNgayTao(LocalDateTime.now());
-        if (sanPhamRepository.getByMa(sanPham.getMaSP()) != null) {
+    public ResponseEntity<?> add(@Valid @RequestBody SanPhamRequest sanPhamRequest) {
+        sanPhamRequest.setMaSP(sanPhamRequest.getMaSP().trim());
+        if (sanPhamRepository.getByMa(sanPhamRequest.getMaSP()) != null) {
             return ResponseEntity.badRequest().body("Mã sản phẩm không được trùng!");
         }
+        Optional<LoaiSanPham> loaiSanPham = loaiSanPhamRepository.findById(sanPhamRequest.getIdSanPham());
+        if (loaiSanPham.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy loại sản phẩm có id: " + sanPhamRequest.getIdSanPham());
+        }
+        Optional<ThuongHieu> thuongHieu = thuongHieuRepository.findById(sanPhamRequest.getIdThuongHieu());
+        if (thuongHieu.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + sanPhamRequest.getIdThuongHieu());
+        }
+
+        SanPham sanPham = new SanPham();
+        BeanUtils.copyProperties(sanPhamRequest, sanPham);
+        sanPham.setNgayTao(LocalDateTime.now());
+        sanPham.setNgaySua(null);
+        sanPham.setLoaiSanPham(loaiSanPham.get());
+        sanPham.setThuongHieu(thuongHieu.get());
+
         sanPhamRepository.save(sanPham);
-        return ResponseEntity.ok("Add done!");
+        return ResponseEntity.ok("Thêm sản phẩm thành công!");
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody SanPham sanPham, @RequestParam(name = "id") Integer id) {
-        if (sanPhamRepository.findById(id).isEmpty()) {
+    public ResponseEntity<?> update(@Valid @RequestBody SanPhamRequest sanPhamRequest, @RequestParam(name = "id") String id) {
+        Optional<SanPham> optionalSanPham = sanPhamRepository.findById(id);
+        if (optionalSanPham.isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm có id: " + id);
         }
-        sanPham.setNgayTao(sanPhamRepository.getReferenceById(id).getNgayTao());
-        sanPham.setNgaySua(LocalDateTime.now());
-        if (sanPhamRepository.getByMaAndId(sanPham.getMaSP(), id) != null) {
+
+        if (sanPhamRepository.getByMaAndId(sanPhamRequest.getMaSP(), id) != null) {
             return ResponseEntity.badRequest().body("Mã sản phẩm không được trùng!");
         }
-        SanPham sanPhamUpdate = sanPhamRepository.getReferenceById(id);
-        BeanUtils.copyProperties(sanPham, sanPhamUpdate, "id");
-        sanPhamRepository.save(sanPhamUpdate);
-        return ResponseEntity.ok("Update done!");
+
+        Optional<LoaiSanPham> loaiSanPham = loaiSanPhamRepository.findById(sanPhamRequest.getIdSanPham());
+        if (loaiSanPham.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy loại sản phẩm có id: " + sanPhamRequest.getIdSanPham());
+        }
+
+        Optional<ThuongHieu> thuongHieu = thuongHieuRepository.findById(sanPhamRequest.getIdThuongHieu());
+        if (thuongHieu.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + sanPhamRequest.getIdThuongHieu());
+        }
+
+        SanPham existingSanPham = optionalSanPham.get();
+        BeanUtils.copyProperties(sanPhamRequest, existingSanPham, "id", "ngayTao");
+        existingSanPham.setNgaySua(LocalDateTime.now());
+        existingSanPham.setLoaiSanPham(loaiSanPham.get());
+        existingSanPham.setThuongHieu(thuongHieu.get());
+
+        sanPhamRepository.save(existingSanPham);
+        return ResponseEntity.ok("Cập nhật sản phẩm thành công!");
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> delete(@RequestParam(name = "id") Integer id) {
+    public ResponseEntity<?> delete(@RequestParam(name = "id") String id) {
         if (sanPhamRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm có id: " + id);
         }

@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "THUONGHIEU")
@@ -15,19 +16,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ThuongHieu {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private String id = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-    @NotBlank(message = "Mã thương hiệu không được để trống")
-    @Size(max = 255, message = "Mã thương hiệu không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-z A-Z 0-9]+$", message = "Mã thương hiệu chỉ được chứa chữ cái và số!")
-    @Column(name = "ma")
+   @Column(name = "ma")
     private String ma;
 
-    @NotBlank(message = "Tên thương hiệu không được để trống")
-    @Size(max = 255, message = "Tên thương hiệu không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-z A-Z À-ỹ à-ỹ\\s]+$", message = "Tên thương hiệu chỉ được chứa chữ cái!")
     @Column(name = "ten")
     private String ten;
 
@@ -37,20 +31,18 @@ public class ThuongHieu {
     @Column(name = "ngaySua")
     private LocalDateTime ngaySua;
 
-    @NotNull(message = "Trạng thái không được để trống")
-    @Min(value = 0, message = "Trạng thái không hợp lệ")
-    @Max(value = 4, message = "Trạng thái không hợp lệ")
     @Column(name = "trangThai")
     private Integer trangThai;
 
-    @NotBlank(message = "Xuất xứ không được để trống")
-    @Size(max = 255, message = "Xuất xứ không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-z A-Z À-ỹ à-ỹ\\s]+$", message = "Xuất xứ chỉ được chứa chữ cái!")
     @Column(name = "xuatXu")
     private String xuatXu;
 
-    @Size(max = 255, message = "Mô tả không được vượt quá 255 ký tự")
-
     @Column(name = "moTa")
     private String moTa;
+
+    public ThuongHieu toResponse(){
+        return new ThuongHieu(id,ma,ten,
+                ngayTao,ngaySua,trangThai,
+                xuatXu,moTa);
+    }
 }

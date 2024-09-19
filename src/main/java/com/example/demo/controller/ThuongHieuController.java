@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.entities.ThuongHieu;
 import com.example.demo.repositories.ThuongHieuRepository;
+import com.example.demo.request.ThuongHieuRequest;
+import com.example.demo.respone.ThuongHieuResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,53 +13,67 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("thuong-hieu")
 public class ThuongHieuController {
+
     @Autowired
     ThuongHieuRepository thuongHieuRepository;
 
     @GetMapping()
     public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(thuongHieuRepository.findAll());
+        return ResponseEntity.ok(thuongHieuRepository.findAll().stream()
+                .map(ThuongHieu::toResponse).collect(Collectors.toList()));
     }
-
-    @PostMapping("/add")
-    public ResponseEntity<?> add(@Valid @RequestBody ThuongHieu thuongHieu) {
-        thuongHieu.setMa(thuongHieu.getMa().trim());
-        thuongHieu.setNgayTao(LocalDateTime.now());
-        if (thuongHieuRepository.getByMa(thuongHieu.getMa()) != null) {
-            return ResponseEntity.badRequest().body("Mã không được trùng!");
-        }
-        thuongHieuRepository.save(thuongHieu);
-        return ResponseEntity.ok("Add done!");
-    }
-
-    @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody ThuongHieu thuongHieu, @RequestParam(name = "id") Integer id) {
+    @GetMapping("/detail")
+    public ResponseEntity<?> detail(@RequestParam(name = "id")String id) {
         if (thuongHieuRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + id);
         }
-        thuongHieu.setNgayTao(thuongHieuRepository.getReferenceById(id).getNgayTao());
-        thuongHieu.setNgaySua(LocalDateTime.now());
-        if (thuongHieuRepository.getByIdAndMa(id,thuongHieu.getMa()) != null) {
+        return ResponseEntity.ok(thuongHieuRepository.findById(id).stream().map(ThuongHieu::toResponse));
+    }
+    @PostMapping("/add")
+    public ResponseEntity<?> add(@Valid @RequestBody ThuongHieuRequest thuongHieuRequest) {
+        thuongHieuRequest.setMa(thuongHieuRequest.getMa().trim());
+        thuongHieuRequest.setTen(thuongHieuRequest.getTen().trim());
+        if (thuongHieuRepository.getByMa(thuongHieuRequest.getMa()) != null) {
             return ResponseEntity.badRequest().body("Mã không được trùng!");
         }
+        ThuongHieu thuongHieu = new ThuongHieu();
+        BeanUtils.copyProperties(thuongHieuRequest, thuongHieu);
+        thuongHieu.setNgayTao(LocalDateTime.now());
+        thuongHieu.setNgaySua(null);
+        thuongHieuRepository.save(thuongHieu);
+        return ResponseEntity.ok("Thêm thương hiệu thành công!");
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> update(@Valid @RequestBody ThuongHieuRequest thuongHieuRequest, @RequestParam(name = "id") String id) {
+        if (thuongHieuRepository.findById(id).isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + id);
+        }
+        if (thuongHieuRepository.getByIdAndMa(id, thuongHieuRequest.getMa()) != null) {
+            return ResponseEntity.badRequest().body("Mã không được trùng!");
+        }
+
         ThuongHieu thuongHieuUpdate = thuongHieuRepository.getReferenceById(id);
-        BeanUtils.copyProperties(thuongHieu, thuongHieuUpdate, "id");
+        BeanUtils.copyProperties(thuongHieuRequest, thuongHieuUpdate, "id", "ngayTao");
+        thuongHieuUpdate.setNgaySua(LocalDateTime.now());
         thuongHieuRepository.save(thuongHieuUpdate);
-        return ResponseEntity.ok("Update done!");
+        return ResponseEntity.ok("Cập nhật thương hiệu thành công!");
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> delete(@RequestParam(name = "id") Integer id) {
+    public ResponseEntity<?> delete(@RequestParam(name = "id") String id) {
         if (thuongHieuRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + id);
         }
         thuongHieuRepository.deleteById(id);
-        return ResponseEntity.ok("Delete done!");
+        return ResponseEntity.ok("Xóa thương hiệu thành công!");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -68,4 +84,5 @@ public class ThuongHieuController {
         });
         return ResponseEntity.badRequest().body(errors);
     }
+
 }

@@ -1,5 +1,6 @@
 package com.example.demo.entities;
 
+import com.example.demo.respone.LoaiSanPhamResponse;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "LOAISP")
@@ -16,19 +18,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class LoaiSanPham {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Integer id;
+    private String id = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-    @NotBlank(message = "Mã sản phẩm không được để trống")
-    @Size(max = 255, message = "Mã sản phẩm không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã sản phẩm chỉ được chứa chữ cái và số!")
-    @Column(name = "MA")
+   @Column(name = "MA")
     private String ma;
 
-    @NotBlank(message = "Tên sản phẩm không được để trống")
-    @Size(max = 255, message = "Tên sản phẩm không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-zA-ZÀ-ỹà-ỹ\\s]+$", message = "Tên sản phẩm chỉ được chứa chữ cái!")
     @Column(name = "TEN")
     private String ten;
 
@@ -38,13 +33,13 @@ public class LoaiSanPham {
     @Column(name = "NGAYSUA")
     private LocalDateTime ngaySua;
 
-    @NotNull(message = "Trạng thái không được để trống")
-    @Min(value = 0, message = "Trạng thái không hợp lệ")
-    @Max(value = 4, message = "Trạng thái không hợp lệ")
+
     @Column(name = "TRANGTHAI")
     private Integer trangThai;
     @ManyToOne
     @JoinColumn(name = "IDDANHMUC")
     private DanhMuc danhMuc;
-
+    public LoaiSanPhamResponse toResponse(){
+        return new LoaiSanPhamResponse(id, ma,ten,ngayTao,ngaySua, trangThai, danhMuc.getTen());
+    }
 }

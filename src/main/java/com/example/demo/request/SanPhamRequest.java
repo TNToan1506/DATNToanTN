@@ -1,0 +1,46 @@
+    package com.example.demo.request;
+
+    import com.example.demo.entities.LoaiSanPham;
+    import com.example.demo.entities.ThuongHieu;
+    import jakarta.persistence.Column;
+    import jakarta.persistence.JoinColumn;
+    import jakarta.persistence.ManyToOne;
+    import jakarta.validation.constraints.*;
+    import lombok.AllArgsConstructor;
+    import lombok.Getter;
+    import lombok.NoArgsConstructor;
+    import lombok.Setter;
+
+    import java.time.LocalDateTime;
+    import java.util.UUID;
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public class SanPhamRequest {
+
+        @NotBlank(message = "Mã sản phẩm không được để trống")
+        @Size(max = 10, message = "Mã sản phẩm không được vượt quá 10 ký tự")
+        @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã sản phẩm chỉ được chứa chữ cái và số!")
+        private String maSP;
+
+        @Size(max = 255, message = "Tên sản phẩm không được vượt quá 255 ký tự")
+        @Pattern(regexp = "^[a-zA-Z0-9À-ỹà-ỹ\\s]+$", message = "Tên sản phẩm chỉ được chứa chữ cái, số và khoảng trắng!")
+        @NotBlank(message = "Tên sản phẩm không được để trống")
+        private String tenSP;
+
+
+        @NotNull(message = "Trạng thái không được để trống")
+        @Min(value = 0, message = "Trạng thái không hợp lệ")
+        @Max(value = 4, message = "Trạng thái không hợp lệ")
+        private Integer trangThai;
+
+        @Size(max = 255, message = "Mô tả không được vượt quá 255 ký tự")
+        private String moTa;
+
+        @NotNull(message = "Sản phẩm không được để trống")
+        private String idSanPham;
+
+        @NotNull(message = "Thương hiệu không được để trống")
+        private String idThuongHieu;
+    }

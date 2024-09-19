@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface LoaiSanPhamRepository extends JpaRepository<LoaiSanPham,Integer> {
+public interface LoaiSanPhamRepository extends JpaRepository<LoaiSanPham,String> {
     @Query("SELECT loaiSP FROM LoaiSanPham loaiSP where loaiSP.ma=:ma")
     LoaiSanPham getLSPByMa(@Param("ma")String ma);
     @Query("SELECT loaiSP FROM LoaiSanPham loaiSP where loaiSP.id<>:id and  loaiSP.ma=:ma ")
-    LoaiSanPham getLSPByMaAndId(@Param("ma")String ma,@Param("id")Integer id);
+    LoaiSanPham getLSPByMaAndId(@Param("ma")String ma,@Param("id")String id);
 }

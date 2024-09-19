@@ -1,62 +1,173 @@
 package com.example.demo.controller;
 
 import com.example.demo.entities.ChiTietSanPham;
+import com.example.demo.entities.GiamGia;
+import com.example.demo.entities.SanPham;
 import com.example.demo.repositories.ChiTietSanPhamRepository;
+import com.example.demo.repositories.GiamGiaRepository;
+import com.example.demo.repositories.SanPhamRepository;
+import com.example.demo.request.ChiTietSanPhamRequest;
+import com.example.demo.respone.ChiTietSanPhamResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("chi-tiet-san-pham")
 public class ChiTietSanPhamController {
-
+    @Autowired
+    SanPhamRepository sanPhamRepository;
+    @Autowired
+    GiamGiaRepository giamGiaRepository;
     @Autowired
     ChiTietSanPhamRepository chiTietSanPhamRepository;
 
     @GetMapping()
     public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(chiTietSanPhamRepository.findAll());
+        List<ChiTietSanPham> chiTietSanPhams = chiTietSanPhamRepository.findAll(Sort.by(Sort.Order.desc("ngayTao")));
+        List<ChiTietSanPhamResponse> responseList = chiTietSanPhams.stream()
+                .map(ChiTietSanPham::toChiTietSanPhamResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseList);
+    }
+
+
+    @GetMapping("/page")
+    public ResponseEntity<?> page(@RequestParam(name = "page",defaultValue = "0") Integer page) {
+        PageRequest pageRequest = PageRequest.of(page, 5, Sort.by(Sort.Order.desc("ngayTao")));
+        Page<ChiTietSanPham> chiTietSanPhamPage = chiTietSanPhamRepository.findAll(pageRequest);
+        List<ChiTietSanPhamResponse> responseList = chiTietSanPhamPage.stream()
+                .map(ChiTietSanPham::toChiTietSanPhamResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseList);
+    }
+
+
+    @GetMapping("/detail")
+    public ResponseEntity<?> detail(@RequestParam(name = "id")String id) {
+        if (chiTietSanPhamRepository.getById(id)==null){
+            return ResponseEntity.badRequest().body("Không tìm thấy CTSP có id: "+id);
+        }
+        return ResponseEntity.ok(chiTietSanPhamRepository.findById(id)
+                .stream().map(ChiTietSanPham::toChiTietSanPhamResponse)
+                .collect(Collectors.toList()));
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> add(@Valid @RequestBody ChiTietSanPham chiTietSanPham) {
-        chiTietSanPham.setMa(chiTietSanPham.getMa().trim());
-        chiTietSanPham.setNgayTao(LocalDateTime.now());
-        chiTietSanPham.setNgaySua(null);
+    public ResponseEntity<?> add(@Valid @RequestBody ChiTietSanPhamRequest chiTietSanPhamRequest) {
+        chiTietSanPhamRequest.setMa(chiTietSanPhamRequest.getMa().trim());
+        chiTietSanPhamRequest.setSoNgaySuDung(chiTietSanPhamRequest.getSoNgaySuDung().trim());
+        chiTietSanPhamRequest.setThanhPhan(chiTietSanPhamRequest.getThanhPhan().trim());
+        chiTietSanPhamRequest.setCongDung(chiTietSanPhamRequest.getCongDung().trim());
 
-        if (chiTietSanPhamRepository.getByMa(chiTietSanPham.getMa()) != null) {
+        ChiTietSanPham existingChiTietSanPham = chiTietSanPhamRepository.trungCTSP(
+                chiTietSanPhamRequest.getIdSP(),
+                chiTietSanPhamRequest.getSoNgaySuDung(),
+                chiTietSanPhamRequest.getThanhPhan(),
+                chiTietSanPhamRequest.getTuoiMin(),
+                chiTietSanPhamRequest.getTuoiMax(),
+                chiTietSanPhamRequest.getCongDung());
+
+        if (existingChiTietSanPham != null) {
+            existingChiTietSanPham.setSoLuong(existingChiTietSanPham.getSoLuong() + chiTietSanPhamRequest.getSoLuong());
+            chiTietSanPhamRepository.save(existingChiTietSanPham);
+            return ResponseEntity.ok("Sản phẩm đã tồn tại, số lượng đã được cập nhật!");
+        }
+
+        if (chiTietSanPhamRepository.getByMa(chiTietSanPhamRequest.getMa()) != null) {
             return ResponseEntity.badRequest().body("Mã chi tiết sản phẩm không được trùng!");
         }
+
+        ChiTietSanPham chiTietSanPham = new ChiTietSanPham();
+        BeanUtils.copyProperties(chiTietSanPhamRequest, chiTietSanPham);
+        chiTietSanPham.setNgayTao(LocalDateTime.now());
+        chiTietSanPham.setNgaySua(null);
+        if (chiTietSanPhamRequest.getIdSP() != null) {
+            SanPham sanPham = sanPhamRepository.findById(chiTietSanPhamRequest.getIdSP()).orElse(null);
+            if (sanPham == null) {
+                return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm với id: " + chiTietSanPhamRequest.getIdSP());
+            }
+            chiTietSanPham.setSanPham(sanPham);
+        }
+
+        if (chiTietSanPhamRequest.getIdGiamGia() != null) {
+            GiamGia giamGia = giamGiaRepository.findById(chiTietSanPhamRequest.getIdGiamGia()).orElse(null);
+            if (giamGia == null) {
+                return ResponseEntity.badRequest().body("Không tìm thấy giảm giá với id: " + chiTietSanPhamRequest.getIdGiamGia());
+            }
+            chiTietSanPham.setGiamGia(giamGia);
+        }
         chiTietSanPhamRepository.save(chiTietSanPham);
-        return ResponseEntity.ok("Add done!");
+
+        return ResponseEntity.ok("Add successful!");
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> update(@Valid @RequestBody ChiTietSanPham chiTietSanPham, @RequestParam(name = "id") Integer id) {
-        if (chiTietSanPhamRepository.findById(id).isEmpty()) {
+    public ResponseEntity<?> update(@Valid @RequestBody ChiTietSanPhamRequest chiTietSanPhamRequest,
+                                    @RequestParam(name = "id") String id) {
+        ChiTietSanPham existingChiTietSanPham = chiTietSanPhamRepository.findById(id).orElse(null);
+        if (existingChiTietSanPham == null) {
             return ResponseEntity.badRequest().body("Không tìm thấy chi tiết sản phẩm có id: " + id);
         }
-        chiTietSanPham.setNgayTao(chiTietSanPhamRepository.getReferenceById(id).getNgayTao());
-        chiTietSanPham.setNgaySua(LocalDateTime.now());
 
-        if (chiTietSanPhamRepository.getByMaAndId(chiTietSanPham.getMa(), id) != null) {
+        chiTietSanPhamRequest.setMa(chiTietSanPhamRequest.getMa().trim());
+        chiTietSanPhamRequest.setSoNgaySuDung(chiTietSanPhamRequest.getSoNgaySuDung().trim());
+        chiTietSanPhamRequest.setThanhPhan(chiTietSanPhamRequest.getThanhPhan().trim());
+        chiTietSanPhamRequest.setCongDung(chiTietSanPhamRequest.getCongDung().trim());
+
+        ChiTietSanPham trungCTSP = chiTietSanPhamRepository.trungCTSP(
+                chiTietSanPhamRequest.getIdSP(),
+                chiTietSanPhamRequest.getSoNgaySuDung(),
+                chiTietSanPhamRequest.getThanhPhan(),
+                chiTietSanPhamRequest.getTuoiMin(),
+                chiTietSanPhamRequest.getTuoiMax(),
+                chiTietSanPhamRequest.getCongDung());
+
+        if (trungCTSP != null && !trungCTSP.getId().equals(id)) {
+            return ResponseEntity.badRequest().body("Chi tiết sản phẩm đã tồn tại với các thuộc tính tương ứng!");
+        }
+
+        if (chiTietSanPhamRepository.getByMaAndId(chiTietSanPhamRequest.getMa(), id) != null) {
             return ResponseEntity.badRequest().body("Mã chi tiết sản phẩm không được trùng!");
         }
-        ChiTietSanPham chiTietSanPhamUpdate = chiTietSanPhamRepository.getReferenceById(id);
-        BeanUtils.copyProperties(chiTietSanPham, chiTietSanPhamUpdate, "id");
-        chiTietSanPhamRepository.save(chiTietSanPhamUpdate);
-        return ResponseEntity.ok("Update done!");
+
+        if (chiTietSanPhamRequest.getIdSP() != null) {
+            SanPham sanPham = sanPhamRepository.findById(chiTietSanPhamRequest.getIdSP()).orElse(null);
+            if (sanPham == null) {
+                return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm với id: " + chiTietSanPhamRequest.getIdSP());
+            }
+            existingChiTietSanPham.setSanPham(sanPham);
+        }
+
+        if (chiTietSanPhamRequest.getIdGiamGia() != null) {
+            GiamGia giamGia = giamGiaRepository.findById(chiTietSanPhamRequest.getIdGiamGia()).orElse(null);
+            if (giamGia == null) {
+                return ResponseEntity.badRequest().body("Không tìm thấy giảm giá với id: " + chiTietSanPhamRequest.getIdGiamGia());
+            }
+            existingChiTietSanPham.setGiamGia(giamGia);
+        }
+        BeanUtils.copyProperties(chiTietSanPhamRequest, existingChiTietSanPham, "id", "ngayTao");
+        existingChiTietSanPham.setNgaySua(LocalDateTime.now());
+
+        chiTietSanPhamRepository.save(existingChiTietSanPham);
+        return ResponseEntity.ok("Update successful!");
     }
 
+
     @DeleteMapping("/delete")
-    public ResponseEntity<?> delete(@RequestParam(name = "id") Integer id) {
+    public ResponseEntity<?> delete(@RequestParam(name = "id") String id) {
         if (chiTietSanPhamRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy chi tiết sản phẩm có id: " + id);
         }
