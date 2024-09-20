@@ -15,9 +15,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ThuongHieuRequest {
-    @NotBlank(message = "Mã thương hiệu không được để trống")
+
     @Size(max = 10, message = "Mã thương hiệu không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^[a-z A-Z 0-9]+$", message = "Mã thương hiệu chỉ được chứa chữ cái và số!")
+//    @Pattern(regexp = "^TH[A-Z0-9]{8}$", message = "Mã phải có định dạng THXXXXXXXX (X là chữ cái hoặc số)!")
     private String ma;
 
     @NotBlank(message = "Tên thương hiệu không được để trống")

@@ -15,10 +15,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("loai-sp")
@@ -48,25 +46,43 @@ public class LoaiSanPhamController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody LoaiSanPhamRequest loaiSanPhamRequest) {
-        if (loaiSanPhamRepository.getLSPByMa(loaiSanPhamRequest.getMa().trim()) != null) {
-            return ResponseEntity.badRequest().body("Mã không được trùng!");
+        String maLoaiSanPham = loaiSanPhamRequest.getMa();
+
+        // Xử lý mã loại sản phẩm
+        if (maLoaiSanPham == null || maLoaiSanPham.trim().isEmpty()) {
+            String prefix = "LSP";
+            String uniqueID;
+            do {
+                uniqueID = UUID.randomUUID().toString().replace("-", "").substring(0, 7).toUpperCase();
+            } while (loaiSanPhamRepository.getLSPByMa(prefix + uniqueID) != null);
+            maLoaiSanPham = prefix + uniqueID;
+        } else {
+            maLoaiSanPham = maLoaiSanPham.trim();
+            if (!Pattern.matches("^LSP[A-Z0-9]{7}$", maLoaiSanPham)) {
+                return ResponseEntity.badRequest().body("Mã phải có định dạng LSPXXXXXXX (X là chữ cái hoặc số)!");
+            }
+            if (loaiSanPhamRepository.getLSPByMa(maLoaiSanPham) != null) {
+                return ResponseEntity.badRequest().body("Mã không được trùng!");
+            }
         }
 
         LoaiSanPham loaiSanPham = new LoaiSanPham();
         BeanUtils.copyProperties(loaiSanPhamRequest, loaiSanPham);
-        if (danhMucRepository.findById(loaiSanPhamRequest.getIdDanhMuc())==null){
-            return ResponseEntity.badRequest().body("Không tồn tại id danh mục: "+loaiSanPhamRequest.getIdDanhMuc());
+
+        // Kiểm tra danh mục
+        if (danhMucRepository.findById(loaiSanPhamRequest.getIdDanhMuc()).isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tồn tại id danh mục: " + loaiSanPhamRequest.getIdDanhMuc());
         }
-        else{
-            loaiSanPham.setDanhMuc(danhMucRepository.getById(loaiSanPhamRequest.getIdDanhMuc()));
-        }
-        loaiSanPham.setMa(loaiSanPham.getMa().trim());
+        loaiSanPham.setDanhMuc(danhMucRepository.getById(loaiSanPhamRequest.getIdDanhMuc()));
+
+        loaiSanPham.setMa(maLoaiSanPham);
         loaiSanPham.setNgayTao(LocalDateTime.now());
         loaiSanPham.setNgaySua(null);
         loaiSanPhamRepository.save(loaiSanPham);
 
-        return ResponseEntity.ok("Add done!");
+        return ResponseEntity.ok("Thêm loại sản phẩm thành công!");
     }
+
     @PutMapping("/update")
     public ResponseEntity<?> update(@Valid @RequestBody LoaiSanPhamRequest loaiSanPhamRequest, @RequestParam(name = "id") String id) {
         Optional<LoaiSanPham> existingLoaiSanPham = loaiSanPhamRepository.findById(id);
@@ -74,23 +90,32 @@ public class LoaiSanPhamController {
             return ResponseEntity.badRequest().body("Không tìm thấy loại sản phẩm có id: " + id);
         }
 
-        if (loaiSanPhamRepository.getLSPByMaAndId(loaiSanPhamRequest.getMa().trim(), id) != null) {
-            return ResponseEntity.badRequest().body("Mã không được trùng!");
+        String maLoaiSanPham = loaiSanPhamRequest.getMa();
+        if (maLoaiSanPham != null && !maLoaiSanPham.trim().isEmpty()) {
+            maLoaiSanPham = maLoaiSanPham.trim();
+            if (!Pattern.matches("^LSP[A-Z0-9]{7}$", maLoaiSanPham)) {
+                return ResponseEntity.badRequest().body("Mã phải có định dạng LSPXXXXXXX (X là chữ cái hoặc số)!");
+            }
+            if (loaiSanPhamRepository.getLSPByMaAndId(maLoaiSanPham,id) != null) {
+                return ResponseEntity.badRequest().body("Mã không được trùng!");
+            }
         }
 
         LoaiSanPham loaiSanPham = existingLoaiSanPham.get();
         BeanUtils.copyProperties(loaiSanPhamRequest, loaiSanPham, "id", "ngayTao");
-        if (danhMucRepository.findById(loaiSanPhamRequest.getIdDanhMuc())==null){
-            return ResponseEntity.badRequest().body("Không tồn tại id danh mục: "+loaiSanPhamRequest.getIdDanhMuc());
+
+        if (danhMucRepository.findById(loaiSanPhamRequest.getIdDanhMuc()).isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tồn tại id danh mục: " + loaiSanPhamRequest.getIdDanhMuc());
         }
-        else{
-            loaiSanPham.setDanhMuc(danhMucRepository.getById(loaiSanPhamRequest.getIdDanhMuc()));
-        }
+        loaiSanPham.setDanhMuc(danhMucRepository.getById(loaiSanPhamRequest.getIdDanhMuc()));
+
         loaiSanPham.setNgaySua(LocalDateTime.now());
         loaiSanPhamRepository.save(loaiSanPham);
 
-        return ResponseEntity.ok("Update done!");
+        return ResponseEntity.ok("Cập nhật loại sản phẩm thành công!");
     }
+
+
     @DeleteMapping("/delete")
     public ResponseEntity<?>deleta(@RequestParam(name = "id")String id){
         if (loaiSanPhamRepository.findById(id).isEmpty()) {

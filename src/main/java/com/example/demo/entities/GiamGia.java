@@ -22,9 +22,7 @@ public class GiamGia {
     @Column(name = "id")
     private String id = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-    @NotBlank(message = "Mã giảm giá không được để trống")
     @Size(max = 10, message = "Mã giảm giá không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã giảm giá chỉ được chứa chữ cái và số!")
     @Column(name = "ma")
     private String ma;
 

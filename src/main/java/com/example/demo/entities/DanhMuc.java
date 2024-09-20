@@ -21,9 +21,8 @@ public class DanhMuc {
     @Column(name = "ID")
     private String id = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-    @NotBlank(message = "Mã danh mục không được để trống")
-    @Size(max = 255, message = "Mã danh mục không được vượt quá 255 ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã danh mục chỉ được chứa chữ cái và số!")
+    @Size(max = 10, message = "Mã danh mục không được vượt quá 10 ký tự")
+//    @Pattern(regexp = "^DM[A-Z0-9]{8}$", message = "Mã phải có định dạng DMXXXXXXXX (X là chữ cái hoặc số)!")
     @Column(name = "MA")
     private String ma;
 

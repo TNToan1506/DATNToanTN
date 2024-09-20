@@ -18,6 +18,8 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("giam-gia")
@@ -46,24 +48,35 @@ public class GiamGiaController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody GiamGia giamGia) {
-        giamGia.setMa(giamGia.getMa().trim());
         giamGia.setNgayTao(LocalDateTime.now());
         giamGia.setNgaySua(null);
 
-        if (giamGiaRepository.getByMa(giamGia.getMa()) != null) {
-            return ResponseEntity.badRequest().body("Mã giảm giá không được trùng!");
+        if (giamGia.getMa() == null || giamGia.getMa().trim().isEmpty()) {
+            String prefix = "GG";
+            String uniqueID;
+            do {
+                uniqueID = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+            } while (giamGiaRepository.getByMa(prefix + uniqueID) != null);
+            giamGia.setMa(prefix + uniqueID);
+        } else {
+            if (!Pattern.matches("^GG[A-Z0-9]{8}$", giamGia.getMa().trim())) {
+                return ResponseEntity.badRequest().body("Mã phải có định dạng GGXXXXXXXX (X là chữ cái hoặc số)!");
+            }
+            if (giamGiaRepository.getByMa(giamGia.getMa().trim()) != null) {
+                return ResponseEntity.badRequest().body("Mã giảm giá không được trùng!");
+            }
         }
-
         if (giamGia.getNgayBatDau().isAfter(giamGia.getNgayKetThuc())) {
             return ResponseEntity.badRequest().body("Ngày bắt đầu phải trước ngày kết thúc!");
         }
         if (!isValidDateFormat(giamGia.getNgayBatDau()) || !isValidDateFormat(giamGia.getNgayKetThuc())) {
             return ResponseEntity.badRequest().body("Ngày phải có định dạng yyyy-MM-dd HH:mm:ss!");
         }
+
         String giaGiam = giamGia.getGiaGiam();
         boolean isPercentage = giaGiam.endsWith("%");
         if (isPercentage) {
-            giaGiam = giaGiam.substring(0, giaGiam.length() - 1); // Loại bỏ ký tự %
+            giaGiam = giaGiam.substring(0, giaGiam.length() - 1);
         }
 
         try {
@@ -78,7 +91,6 @@ public class GiamGiaController {
         giamGiaRepository.save(giamGia);
         return ResponseEntity.ok("Add done!");
     }
-
     private boolean isValidDateFormat(LocalDateTime date) {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -93,11 +105,23 @@ public class GiamGiaController {
         if (giamGiaRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy giảm giá có id: " + id);
         }
-        if (giamGiaRepository.getByMaAndId(giamGia.getMa(), id) != null) {
-            return ResponseEntity.badRequest().body("Mã giảm giá không được trùng!");
+
+        if (giamGia.getMa().trim() == null || giamGia.getMa().trim().isEmpty()) {
+            String prefix = "GG";
+            String uniqueID;
+            do {
+                uniqueID = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+            } while (giamGiaRepository.getByMa(prefix + uniqueID) != null);
+            giamGia.setMa(prefix + uniqueID);
+        } else {
+            if (!Pattern.matches("^GG[A-Z0-9]{8}$", giamGia.getMa().trim())) {
+                return ResponseEntity.badRequest().body("Mã phải có định dạng GGXXXXXXXX (X là chữ cái hoặc số)!");
+            }
+            if (giamGiaRepository.getByMaAndId(giamGia.getMa(), id)!=null) {
+                return ResponseEntity.badRequest().body("Mã giảm giá không được trùng!");
+            }
         }
 
-        // Kiểm tra định dạng ngày
         if (!isValidDateFormat(giamGia.getNgayBatDau()) || !isValidDateFormat(giamGia.getNgayKetThuc())) {
             return ResponseEntity.badRequest().body("Ngày phải có định dạng yyyy-MM-dd HH:mm:ss!");
         }
@@ -105,7 +129,6 @@ public class GiamGiaController {
             return ResponseEntity.badRequest().body("Ngày bắt đầu phải trước ngày kết thúc!");
         }
 
-        // Kiểm tra giá giảm
         String giaGiam = giamGia.getGiaGiam();
         boolean isPercentage = giaGiam.endsWith("%");
         if (isPercentage) {
@@ -130,9 +153,11 @@ public class GiamGiaController {
         giamGiaUpdate.setNgayKetThuc(giamGia.getNgayKetThuc());
         giamGiaUpdate.setGiaGiam(giamGia.getGiaGiam());
         giamGiaUpdate.setTrangThai(giamGia.getTrangThai());
+
         giamGiaRepository.save(giamGiaUpdate);
         return ResponseEntity.ok("Update done!");
     }
+
 
     @DeleteMapping("/delete")
     public ResponseEntity<?> delete(@RequestParam(name = "id") String id) {

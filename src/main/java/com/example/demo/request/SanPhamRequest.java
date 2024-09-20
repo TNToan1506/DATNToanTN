@@ -19,9 +19,9 @@
     @NoArgsConstructor
     public class SanPhamRequest {
 
-        @NotBlank(message = "Mã sản phẩm không được để trống")
+
         @Size(max = 10, message = "Mã sản phẩm không được vượt quá 10 ký tự")
-        @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã sản phẩm chỉ được chứa chữ cái và số!")
+//        @Pattern(regexp = "^SP[A-Z0-9]{8}$", message = "Mã phải có định dạng SPXXXXXXXX (X là chữ cái hoặc số)!")
         private String maSP;
 
         @Size(max = 255, message = "Tên sản phẩm không được vượt quá 255 ký tự")

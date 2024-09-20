@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoaiSanPhamRequest {
-    @NotBlank(message = "Mã sản phẩm không được để trống")
+
     @Size(max = 10, message = "Mã sản phẩm không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã sản phẩm chỉ được chứa chữ cái và số!")
+//    @Pattern(regexp = "^LSP[A-Z0-9]{7}$", message = "Mã phải có định dạng CTSPXXXXXXX (X là chữ cái hoặc số)!")
     private String ma;
 
     @NotBlank(message = "Tên sản phẩm không được để trống")

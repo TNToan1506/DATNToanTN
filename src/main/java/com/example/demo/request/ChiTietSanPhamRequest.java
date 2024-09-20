@@ -11,9 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 public class ChiTietSanPhamRequest {
 
-    @NotBlank(message = "Mã không được để trống")
     @Size(max = 10, message = "Mã không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Mã chỉ được chứa chữ cái và số!")
+//    @Pattern(regexp = "^CTSP[A-Z0-9]{6}$", message = "Mã phải có định dạng CTSPXXXXXX (X là chữ cái hoặc số)!")
     private String ma;
 
     @NotBlank(message = "Giá không được để trống")

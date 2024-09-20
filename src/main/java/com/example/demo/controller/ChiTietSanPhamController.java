@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
@@ -61,8 +63,7 @@ public class ChiTietSanPhamController {
             return ResponseEntity.badRequest().body("Không tìm thấy CTSP có id: "+id);
         }
         return ResponseEntity.ok(chiTietSanPhamRepository.findById(id)
-                .stream().map(ChiTietSanPham::toChiTietSanPhamResponse)
-                .collect(Collectors.toList()));
+                .stream().map(ChiTietSanPham::toChiTietSanPhamResponse));
     }
 
     @PostMapping("/add")
@@ -71,6 +72,20 @@ public class ChiTietSanPhamController {
         chiTietSanPhamRequest.setSoNgaySuDung(chiTietSanPhamRequest.getSoNgaySuDung().trim());
         chiTietSanPhamRequest.setThanhPhan(chiTietSanPhamRequest.getThanhPhan().trim());
         chiTietSanPhamRequest.setCongDung(chiTietSanPhamRequest.getCongDung().trim());
+
+        // Kiểm tra mã và tạo mã mới nếu mã không được cung cấp
+        if (chiTietSanPhamRequest.getMa() == null || chiTietSanPhamRequest.getMa().isEmpty()) {
+            String generatedMa;
+            do {
+                String randomString = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
+                generatedMa = "CTSP" + randomString;
+            } while (chiTietSanPhamRepository.getByMa(generatedMa) != null);
+            chiTietSanPhamRequest.setMa(generatedMa);
+        } else if (!Pattern.matches("^CTSP[A-Z0-9]{6}$", chiTietSanPhamRequest.getMa().trim())) {
+            return ResponseEntity.badRequest().body("Mã phải có định dạng CTSPXXXXXX (X là chữ cái hoặc số)!");
+        } else if (chiTietSanPhamRepository.getByMa(chiTietSanPhamRequest.getMa().trim()) != null) {
+            return ResponseEntity.badRequest().body("Mã chi tiết sản phẩm không được trùng!");
+        }
 
         ChiTietSanPham existingChiTietSanPham = chiTietSanPhamRepository.trungCTSP(
                 chiTietSanPhamRequest.getIdSP(),
@@ -86,14 +101,11 @@ public class ChiTietSanPhamController {
             return ResponseEntity.ok("Sản phẩm đã tồn tại, số lượng đã được cập nhật!");
         }
 
-        if (chiTietSanPhamRepository.getByMa(chiTietSanPhamRequest.getMa()) != null) {
-            return ResponseEntity.badRequest().body("Mã chi tiết sản phẩm không được trùng!");
-        }
-
         ChiTietSanPham chiTietSanPham = new ChiTietSanPham();
         BeanUtils.copyProperties(chiTietSanPhamRequest, chiTietSanPham);
         chiTietSanPham.setNgayTao(LocalDateTime.now());
         chiTietSanPham.setNgaySua(null);
+
         if (chiTietSanPhamRequest.getIdSP() != null) {
             SanPham sanPham = sanPhamRepository.findById(chiTietSanPhamRequest.getIdSP()).orElse(null);
             if (sanPham == null) {
@@ -109,8 +121,8 @@ public class ChiTietSanPhamController {
             }
             chiTietSanPham.setGiamGia(giamGia);
         }
-        chiTietSanPhamRepository.save(chiTietSanPham);
 
+        chiTietSanPhamRepository.save(chiTietSanPham);
         return ResponseEntity.ok("Add successful!");
     }
 
@@ -139,6 +151,10 @@ public class ChiTietSanPhamController {
             return ResponseEntity.badRequest().body("Chi tiết sản phẩm đã tồn tại với các thuộc tính tương ứng!");
         }
 
+        if (chiTietSanPhamRequest.getMa() != null && !Pattern.matches("^CTSP[A-Z0-9]{6}$", chiTietSanPhamRequest.getMa().trim())) {
+            return ResponseEntity.badRequest().body("Mã phải có định dạng CTSPXXXXXX (X là chữ cái hoặc số)!");
+        }
+
         if (chiTietSanPhamRepository.getByMaAndId(chiTietSanPhamRequest.getMa(), id) != null) {
             return ResponseEntity.badRequest().body("Mã chi tiết sản phẩm không được trùng!");
         }
@@ -158,13 +174,13 @@ public class ChiTietSanPhamController {
             }
             existingChiTietSanPham.setGiamGia(giamGia);
         }
+
         BeanUtils.copyProperties(chiTietSanPhamRequest, existingChiTietSanPham, "id", "ngayTao");
         existingChiTietSanPham.setNgaySua(LocalDateTime.now());
 
         chiTietSanPhamRepository.save(existingChiTietSanPham);
         return ResponseEntity.ok("Update successful!");
     }
-
 
     @DeleteMapping("/delete")
     public ResponseEntity<?> delete(@RequestParam(name = "id") String id) {
