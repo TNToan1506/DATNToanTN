@@ -61,14 +61,17 @@ public class AnhCTSPController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody AnhCTSPRequest anhSPRequest) {
-        AnhCTSP anhSP = new AnhCTSP();
-
-        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.getById(anhSPRequest.getIdCTSP());
-
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(anhSPRequest.getIdCTSP()).orElse(null);
         if (chiTietSanPham == null) {
             return ResponseEntity.badRequest().body("Không tìm thấy ChiTietSanPham có id: " + anhSPRequest.getIdCTSP());
         }
 
+        AnhCTSP duplicate = anhCTSPRepository.checkTrungAdd(anhSPRequest.getLink().trim(), anhSPRequest.getIdCTSP());
+        if (duplicate != null) {
+            return ResponseEntity.badRequest().body("Ảnh đã tồn tại với liên kết này trong chi tiết sản phẩm.");
+        }
+
+        AnhCTSP anhSP = new AnhCTSP();
         BeanUtils.copyProperties(anhSPRequest, anhSP);
         anhSP.setNgayTao(LocalDateTime.now());
         anhSP.setNgaySua(null);
@@ -79,26 +82,30 @@ public class AnhCTSPController {
         return ResponseEntity.ok("Thêm ảnh thành công!");
     }
 
+
     @PutMapping("/update")
     public ResponseEntity<?> update(@Valid @RequestBody AnhCTSPRequest anhSPRequest, @RequestParam(name = "id") String id) {
-        AnhCTSP existingAnhSP = anhCTSPRepository.getById(id);
-
-        if (existingAnhSP != null) {
-            ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.getById(anhSPRequest.getIdCTSP());
-
-            if (chiTietSanPham == null) {
-                return ResponseEntity.badRequest().body("Không tìm thấy ChiTietSanPham có id: " + anhSPRequest.getIdCTSP());
-            }
-
-            BeanUtils.copyProperties(anhSPRequest, existingAnhSP, "id", "ngayTao");
-
-            existingAnhSP.setChiTietSanPham(chiTietSanPham);
-            existingAnhSP.setNgaySua(LocalDateTime.now());
-            anhCTSPRepository.save(existingAnhSP);
-            return ResponseEntity.ok("Cập nhật ảnh thành công!");
-        } else {
+        AnhCTSP existingAnhSP = anhCTSPRepository.findById(id).orElse(null);
+        if (existingAnhSP == null) {
             return ResponseEntity.badRequest().body("Không tìm thấy ảnh có id: " + id);
         }
+
+        ChiTietSanPham chiTietSanPham = chiTietSanPhamRepository.findById(anhSPRequest.getIdCTSP()).orElse(null);
+        if (chiTietSanPham == null) {
+            return ResponseEntity.badRequest().body("Không tìm thấy ChiTietSanPham có id: " + anhSPRequest.getIdCTSP());
+        }
+
+        AnhCTSP duplicate = anhCTSPRepository.checkTrungUpdate(anhSPRequest.getLink().trim(), anhSPRequest.getIdCTSP(), id);
+        if (duplicate != null) {
+            return ResponseEntity.badRequest().body("Ảnh đã tồn tại với liên kết này trong chi tiết sản phẩm.");
+        }
+
+        BeanUtils.copyProperties(anhSPRequest, existingAnhSP, "id", "ngayTao");
+        existingAnhSP.setChiTietSanPham(chiTietSanPham);
+        existingAnhSP.setNgaySua(LocalDateTime.now());
+
+        anhCTSPRepository.save(existingAnhSP);
+        return ResponseEntity.ok("Cập nhật ảnh thành công!");
     }
 
     @DeleteMapping("/delete")

@@ -25,6 +25,14 @@ public class SanPhamResponse {
 
     private String tenSP;
 
+    private String thanhPhan;
+
+    private String congDung;
+
+    private Integer tuoiMin;
+
+    private Integer tuoiMax;
+
     private LocalDateTime ngayTao;
 
     private LocalDateTime ngaySua;
@@ -36,4 +44,6 @@ public class SanPhamResponse {
     private String tenSanPham;
 
     private String tenThuongHieu;
+
+    private String tenGiamGia;
 }

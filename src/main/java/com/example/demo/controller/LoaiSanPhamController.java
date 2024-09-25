@@ -46,9 +46,10 @@ public class LoaiSanPhamController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody LoaiSanPhamRequest loaiSanPhamRequest) {
+        if (loaiSanPhamRepository.getLSPByName(loaiSanPhamRequest.getTen().trim())!=null){
+            return ResponseEntity.badRequest().body("Tên loại sản phẩm không được trùng!");
+        }
         String maLoaiSanPham = loaiSanPhamRequest.getMa();
-
-        // Xử lý mã loại sản phẩm
         if (maLoaiSanPham == null || maLoaiSanPham.trim().isEmpty()) {
             String prefix = "LSP";
             String uniqueID;
@@ -85,11 +86,14 @@ public class LoaiSanPhamController {
 
     @PutMapping("/update")
     public ResponseEntity<?> update(@Valid @RequestBody LoaiSanPhamRequest loaiSanPhamRequest, @RequestParam(name = "id") String id) {
+
         Optional<LoaiSanPham> existingLoaiSanPham = loaiSanPhamRepository.findById(id);
         if (existingLoaiSanPham.isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy loại sản phẩm có id: " + id);
         }
-
+        if (loaiSanPhamRepository.getLSPByNameAndId(loaiSanPhamRequest.getTen().trim(),id)!=null){
+            return ResponseEntity.badRequest().body("Tên loại sản phẩm không được trùng!");
+        }
         String maLoaiSanPham = loaiSanPhamRequest.getMa();
         if (maLoaiSanPham != null && !maLoaiSanPham.trim().isEmpty()) {
             maLoaiSanPham = maLoaiSanPham.trim();

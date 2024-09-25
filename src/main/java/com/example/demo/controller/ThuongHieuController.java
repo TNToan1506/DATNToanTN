@@ -37,6 +37,9 @@ public class ThuongHieuController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody ThuongHieuRequest thuongHieuRequest) {
+        if (thuongHieuRepository.getByName(thuongHieuRequest.getTen().trim())!=null){
+            return ResponseEntity.badRequest().body("Tên không được trùng!");
+        }
         String maThuongHieu = thuongHieuRequest.getMa();
         if (maThuongHieu == null || maThuongHieu.trim().isEmpty()) {
             String prefix = "TH";
@@ -72,7 +75,9 @@ public class ThuongHieuController {
         if (optionalThuongHieu.isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy thương hiệu có id: " + id);
         }
-
+        if (thuongHieuRepository.getByNameAndId(thuongHieuRequest.getTen().trim(),id)!=null){
+            return ResponseEntity.badRequest().body("Tên không được trùng!");
+        }
         String maThuongHieu = thuongHieuRequest.getMa();
         if (maThuongHieu != null && !maThuongHieu.trim().isEmpty()) {
             maThuongHieu = maThuongHieu.trim();

@@ -72,7 +72,14 @@ public class GiamGiaController {
         if (!isValidDateFormat(giamGia.getNgayBatDau()) || !isValidDateFormat(giamGia.getNgayKetThuc())) {
             return ResponseEntity.badRequest().body("Ngày phải có định dạng yyyy-MM-dd HH:mm:ss!");
         }
-
+        GiamGia existingGiamGia = giamGiaRepository.getByNameAndTimeOverlap(
+                giamGia.getTen(),
+                giamGia.getNgayBatDau(),
+                giamGia.getNgayKetThuc(),
+                null);
+        if (existingGiamGia != null) {
+            return ResponseEntity.badRequest().body("Đã tồn tại giảm giá với tên hoặc có thời gian trùng lặp!");
+        }
         String giaGiam = giamGia.getGiaGiam();
         boolean isPercentage = giaGiam.endsWith("%");
         if (isPercentage) {
@@ -128,7 +135,14 @@ public class GiamGiaController {
         if (giamGia.getNgayBatDau().isAfter(giamGia.getNgayKetThuc())) {
             return ResponseEntity.badRequest().body("Ngày bắt đầu phải trước ngày kết thúc!");
         }
-
+        GiamGia existingGiamGia = giamGiaRepository.getByNameAndTimeOverlap(
+                giamGia.getTen(),
+                giamGia.getNgayBatDau(),
+                giamGia.getNgayKetThuc(),
+                id);
+        if (existingGiamGia != null) {
+            return ResponseEntity.badRequest().body("Đã tồn tại giảm giá với tên hoặc có thời gian trùng lặp!");
+        }
         String giaGiam = giamGia.getGiaGiam();
         boolean isPercentage = giaGiam.endsWith("%");
         if (isPercentage) {

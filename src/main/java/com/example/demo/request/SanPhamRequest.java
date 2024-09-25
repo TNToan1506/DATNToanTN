@@ -29,6 +29,21 @@
         @NotBlank(message = "Tên sản phẩm không được để trống")
         private String tenSP;
 
+        @NotBlank(message = "Thành phần không được để trống")
+        @Size(max = 255, message = "Thành phần không được vượt quá 255 ký tự")
+        private String thanhPhan;
+
+        @NotBlank(message = "Công dụng không được để trống")
+        @Size(max = 255, message = "Công dụng không được vượt quá 255 ký tự")
+        private String congDung;
+
+        @Min(value = 0, message = "Tuổi tối thiểu không hợp lệ")
+        @Max(value = 100, message = "Tuổi tối thiểu không hợp lệ")
+        private int tuoiMin;
+
+        @Min(value = 0, message = "Tuổi tối đa không hợp lệ")
+        @Max(value = 200, message = "Tuổi tối đa không hợp lệ")
+        private int tuoiMax;
 
         @NotNull(message = "Trạng thái không được để trống")
         @Min(value = 0, message = "Trạng thái không hợp lệ")
@@ -43,4 +58,6 @@
 
         @NotNull(message = "Thương hiệu không được để trống")
         private String idThuongHieu;
+
+        private String idGiamGia;
     }

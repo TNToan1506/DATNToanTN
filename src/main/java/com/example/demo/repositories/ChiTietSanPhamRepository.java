@@ -5,21 +5,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
+
 public interface ChiTietSanPhamRepository extends JpaRepository<ChiTietSanPham,String> {
     @Query("SELECT ctsp FROM ChiTietSanPham ctsp WHERE ctsp.ma=:ma")
     ChiTietSanPham getByMa(@Param("ma")String ma);
     @Query("SELECT ctsp FROM ChiTietSanPham ctsp WHERE ctsp.ma=:ma AND ctsp.id<>:id")
     ChiTietSanPham getByMaAndId(@Param("ma")String ma,@Param("id")String id);
-    @Query("SELECT ctsp FROM ChiTietSanPham ctsp WHERE ctsp.sanPham.id = :idSP AND ctsp.soNgaySuDung = :soNgaySuDung AND " +
-            "ctsp.thanhPhan = :thanhPhan " +
-            "AND ctsp.congDung = :congDung " +
-            "AND ctsp.tuoiMin = :tuoiMin " +
-            "AND ctsp.tuoiMax = :tuoiMax")
+    @Query("SELECT ctsp FROM ChiTietSanPham ctsp WHERE ctsp.sanPham.id = :idSP " +
+            "AND ctsp.soNgaySuDung = :soNgaySuDung " +
+            "AND ctsp.ngaySanXuat = :ngaySanXuat " +
+            "AND ctsp.hsd = :hsd " +
+            "AND ctsp.gia = :gia")
     ChiTietSanPham trungCTSP(@Param("idSP") String idSP,
                              @Param("soNgaySuDung") String soNgaySuDung,
-                             @Param("thanhPhan") String thanhPhan,
-                             @Param("tuoiMin") int tuoiMin,
-                             @Param("tuoiMax") int tuoiMax,
-                             @Param("congDung") String congDung);
+                             @Param("ngaySanXuat") LocalDateTime ngaySanXuat,
+                             @Param("hsd") LocalDateTime hsd,
+                             @Param("gia") String gia);
 
 }

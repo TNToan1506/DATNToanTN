@@ -33,27 +33,14 @@ public class ChiTietSanPham {
     private String soNgaySuDung;
 
 
-    @Column(name = "thanhPhan")
-    private String thanhPhan;
-
-
-    @Column(name = "congDung")
-    private String congDung;
-
-
     @Column(name = "HDSD")
-    private String HDSD;
-
-    @Column(name = "tuoiMin")
-    private int tuoiMin;
-
-    @Column(name = "tuoiMax")
-    private int tuoiMax;
-
+    private String hdsd;
 
     @Column(name = "HSD")
-    private LocalDate HSD;
+    private LocalDateTime hsd;
 
+    @Column(name = "ngaySanXuat")
+    private LocalDateTime ngaySanXuat;
 
     @Column(name = "ngayNhap")
     private LocalDateTime ngayNhap;
@@ -75,29 +62,9 @@ public class ChiTietSanPham {
     @JoinColumn(name = "idSP")
     SanPham sanPham;
 
-    @ManyToOne
-    @JoinColumn(name = "idGiamGia")
-    GiamGia giamGia;
-
     public ChiTietSanPhamResponse toChiTietSanPhamResponse() {
-        return new ChiTietSanPhamResponse(
-                id,
-                ma,
-                gia,
-                soNgaySuDung,
-                thanhPhan,
-                congDung,
-                HDSD,
-                tuoiMin,
-                tuoiMax,
-                HSD,
-                ngayNhap,
-                soLuong,
-                trangThai,
-                ngayTao,
-                ngaySua,
-                sanPham != null ? sanPham.getMaSP() : null,
-                giamGia != null ? giamGia.getMa() : null
-        );
+        return new ChiTietSanPhamResponse(id, ma, gia, soNgaySuDung, hdsd,
+                ngaySanXuat,hsd,ngayNhap,soLuong,trangThai,ngayTao,
+                ngaySua,sanPham.getMaSP());
     }
 }

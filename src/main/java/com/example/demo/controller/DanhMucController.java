@@ -49,6 +49,9 @@ public class DanhMucController {
         danhMuc.setNgayTao(LocalDateTime.now());
         danhMuc.setNgaySua(null);
 
+        if (danhMucRepository.getByName(danhMuc.getTen().trim())!=null){
+            return ResponseEntity.badRequest().body("Tên danh mục không được trùng!");
+        }
         if (danhMuc.getMa() == null || danhMuc.getMa().trim().isEmpty()) {
             String prefix = "DM";
             String uniqueID;
@@ -65,6 +68,7 @@ public class DanhMucController {
             }
         }
 
+
         danhMucRepository.save(danhMuc);
         return ResponseEntity.ok("Thêm danh mục thành công!");
     }
@@ -72,6 +76,9 @@ public class DanhMucController {
     public ResponseEntity<?> update(@Valid @RequestBody DanhMuc danhMuc, @RequestParam(name = "id") String id) {
         if (danhMucRepository.findById(id).isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy danh mục có id: " + id);
+        }
+        if (danhMucRepository.getByNameAndId(id,danhMuc.getTen().trim())!=null){
+            return ResponseEntity.badRequest().body("Tên danh mục không được trùng!");
         }
         if (danhMuc.getMa() == null || danhMuc.getMa().trim().isEmpty()) {
             String prefix = "DM";
@@ -90,8 +97,7 @@ public class DanhMucController {
         }
         DanhMuc danhMucUpdate = danhMucRepository.getReferenceById(id);
         danhMucUpdate.setNgaySua(LocalDateTime.now());
-        BeanUtils.copyProperties(danhMuc, danhMucUpdate, "id", "ngayTao"); // Giữ nguyên ngày tạo
-
+        BeanUtils.copyProperties(danhMuc, danhMucUpdate, "id", "ngayTao","ma"); // Giữ nguyên ngày tạo
         danhMucRepository.save(danhMucUpdate);
         return ResponseEntity.ok("Cập nhật danh mục thành công!");
     }

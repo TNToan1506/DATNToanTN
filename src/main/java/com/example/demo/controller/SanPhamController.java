@@ -51,6 +51,9 @@ public class SanPhamController {
     }
     @PostMapping("/add")
     public ResponseEntity<?> add(@Valid @RequestBody SanPhamRequest sanPhamRequest) {
+        if (sanPhamRepository.getByName(sanPhamRequest.getTenSP().trim())!=null){
+            return ResponseEntity.badRequest().body("Tên sản phẩm không được trùng!");
+        }
         String maSanPham = sanPhamRequest.getMaSP();
         if (maSanPham == null || maSanPham.trim().isEmpty()) {
             String prefix = "SP";
@@ -95,7 +98,9 @@ public class SanPhamController {
         if (optionalSanPham.isEmpty()) {
             return ResponseEntity.badRequest().body("Không tìm thấy sản phẩm có id: " + id);
         }
-
+        if (sanPhamRepository.getByNameAndId(sanPhamRequest.getTenSP().trim(),id)!=null){
+            return ResponseEntity.badRequest().body("Tên sản phẩm không được trùng!");
+        }
         String maSanPham = sanPhamRequest.getMaSP();
         if (maSanPham != null && !maSanPham.trim().isEmpty()) {
             maSanPham = maSanPham.trim();
@@ -105,6 +110,9 @@ public class SanPhamController {
             if (sanPhamRepository.getByMaAndId(maSanPham,id) != null) {
                 return ResponseEntity.badRequest().body("Mã sản phẩm không được trùng!");
             }
+        }
+        if (sanPhamRequest.getTuoiMin() > sanPhamRequest.getTuoiMax()) {
+                return ResponseEntity.badRequest().body("Tuổi tối thiểu không được lớn hơn tuổi tối đa!");
         }
 
         if (loaiSanPhamRepository.findById(sanPhamRequest.getIdSanPham()).isEmpty()) {

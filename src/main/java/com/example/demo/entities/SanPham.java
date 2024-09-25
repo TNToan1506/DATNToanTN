@@ -22,9 +22,20 @@
         @Column(name = "ma")
         private String maSP;
 
-
         @Column(name = "ten")
         private String tenSP;
+
+        @Column(name = "thanhPhan")
+        private String thanhPhan;
+
+        @Column(name = "congDung")
+        private String congDung;
+
+        @Column(name = "tuoiMin")
+        private Integer tuoiMin;
+
+        @Column(name = "tuoiMax")
+        private Integer tuoiMax;
 
         @Column(name = "ngayTao")
         private LocalDateTime ngayTao;
@@ -47,8 +58,13 @@
         @JoinColumn(name = "idThuongHieu")
         private ThuongHieu thuongHieu;
 
+        @ManyToOne
+        @JoinColumn(name = "idGiamGia")
+        private GiamGia giamGia;
+
         public SanPhamResponse toResponse(){
-            return new SanPhamResponse(id, maSP,tenSP,ngayTao,ngaySua,
-            trangThai,moTa, loaiSanPham.getTen(), thuongHieu.getTen());
+            return new SanPhamResponse(id, maSP,tenSP,thanhPhan,congDung,tuoiMin,tuoiMax,
+                    ngayTao,ngaySua, trangThai,moTa,
+                    loaiSanPham.getTen(), thuongHieu.getTen(),giamGia.getTen());
         }
     }

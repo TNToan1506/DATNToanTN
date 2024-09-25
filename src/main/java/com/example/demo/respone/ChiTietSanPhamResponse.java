@@ -15,17 +15,13 @@ public class ChiTietSanPhamResponse {
     private String ma;
     private String gia;
     private String soNgaySuDung;
-    private String thanhPhan;
-    private String congDung;
-    private String HDSD;
-    private int tuoiMin;
-    private int tuoiMax;
-    private LocalDate HSD;
+    private String hdsd;
+    private LocalDateTime ngaySanXuat;
+    private LocalDateTime hsd;
     private LocalDateTime ngayNhap;
     private int soLuong;
     private int trangThai;
     private LocalDateTime ngayTao;
     private LocalDateTime ngaySua;
     private String maSP;
-    private String maGiamGia;
 }
